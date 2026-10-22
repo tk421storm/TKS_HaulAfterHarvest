@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+	<TKSHaulAfterHarvestRadius>Search radius: {0} cells</TKSHaulAfterHarvestRadius>
+	<TKSHaulAfterHarvestRadiusToolTip>How far from the colonist to look for something to haul when a harvest finishes.</TKSHaulAfterHarvestRadiusToolTip>
+	<TKSHaulAfterHarvestIncludeTrees>Include trees</TKSHaulAfterHarvestIncludeTrees>
+	<TKSHaulAfterHarvestIncludeTreesToolTip>Also haul after cutting plants and chopping trees, not only after harvesting.</TKSHaulAfterHarvestIncludeTreesToolTip>
+	<TKSHaulAfterHarvestRequireHauling>Only colonists assigned to hauling</TKSHaulAfterHarvestRequireHauling>
+	<TKSHaulAfterHarvestRequireHaulingToolTip>Colonists with the Hauling work type turned off go straight back to their other work.</TKSHaulAfterHarvestRequireHaulingToolTip>
+	<TKSHaulAfterHarvestCropOnly>Only haul the harvested crop</TKSHaulAfterHarvestCropOnly>
+	<TKSHaulAfterHarvestCropOnlyToolTip>Only haul what was just harvested. When off, the crop is hauled first, and anything else nearby if no crop is in range.</TKSHaulAfterHarvestCropOnlyToolTip>
+</LanguageData>

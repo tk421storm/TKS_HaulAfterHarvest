@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ModMetaData>
+	<name>Haul After Harvest</name>
+	<author>tk421storm</author>
+	<packageId>tk421storm.HaulAfterHarvest</packageId>
+	<supportedVersions>
+		<li>1.6</li>
+	</supportedVersions>
+	<description>After harvesting (and optionally chopping trees), a colonist hauls one nearby item to storage before moving on - usually the crop they just picked.\n\nSettings: search radius (default 5 cells), include trees, only colonists with Hauling enabled, only the harvested crop.</description>
+	<modDependencies>
+		<li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+			<downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
+		</li>
+	</modDependencies>
+</ModMetaData>
