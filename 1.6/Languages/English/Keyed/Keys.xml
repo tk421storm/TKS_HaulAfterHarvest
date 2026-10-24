@@ -2,10 +2,16 @@
 <LanguageData>
 	<TKSHaulAfterHarvestRadius>Search radius: {0} cells</TKSHaulAfterHarvestRadius>
 	<TKSHaulAfterHarvestRadiusToolTip>How far from the colonist to look for something to haul when a harvest finishes.</TKSHaulAfterHarvestRadiusToolTip>
-	<TKSHaulAfterHarvestIncludeTrees>Include trees</TKSHaulAfterHarvestIncludeTrees>
-	<TKSHaulAfterHarvestIncludeTreesToolTip>Also haul after cutting plants and chopping trees, not only after harvesting.</TKSHaulAfterHarvestIncludeTreesToolTip>
+	<TKSHaulAfterHarvestEnablePlants>Enable for plants</TKSHaulAfterHarvestEnablePlants>
+	<TKSHaulAfterHarvestEnablePlantsToolTip>Haul something nearby after harvesting crops and other plants.</TKSHaulAfterHarvestEnablePlantsToolTip>
+	<TKSHaulAfterHarvestIncludeTrees>Enable for trees</TKSHaulAfterHarvestIncludeTrees>
+	<TKSHaulAfterHarvestIncludeTreesToolTip>Haul something nearby after cutting plants and chopping trees.</TKSHaulAfterHarvestIncludeTreesToolTip>
+	<TKSHaulAfterHarvestEnableAnimals>Enable for animals</TKSHaulAfterHarvestEnableAnimals>
+	<TKSHaulAfterHarvestEnableAnimalsToolTip>Haul something nearby after milking or shearing an animal.</TKSHaulAfterHarvestEnableAnimalsToolTip>
+	<TKSHaulAfterHarvestEnableMining>Enable for mining</TKSHaulAfterHarvestEnableMining>
+	<TKSHaulAfterHarvestEnableMiningToolTip>Haul something nearby after mining. Rock chunks are only hauled if they are marked for hauling, as in vanilla.</TKSHaulAfterHarvestEnableMiningToolTip>
+	<TKSHaulAfterHarvestEnableFishing>Enable for fishing</TKSHaulAfterHarvestEnableFishing>
+	<TKSHaulAfterHarvestEnableFishingToolTip>Haul something nearby after a run of fishing.</TKSHaulAfterHarvestEnableFishingToolTip>
 	<TKSHaulAfterHarvestRequireHauling>Only colonists assigned to hauling</TKSHaulAfterHarvestRequireHauling>
 	<TKSHaulAfterHarvestRequireHaulingToolTip>Colonists with the Hauling work type turned off go straight back to their other work.</TKSHaulAfterHarvestRequireHaulingToolTip>
-	<TKSHaulAfterHarvestCropOnly>Only haul the harvested crop</TKSHaulAfterHarvestCropOnly>
-	<TKSHaulAfterHarvestCropOnlyToolTip>Only haul what was just harvested. When off, the crop is hauled first, and anything else nearby if no crop is in range.</TKSHaulAfterHarvestCropOnlyToolTip>
 </LanguageData>

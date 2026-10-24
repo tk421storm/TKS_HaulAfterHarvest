@@ -6,7 +6,7 @@
 	<supportedVersions>
 		<li>1.6</li>
 	</supportedVersions>
-	<description>After harvesting (and optionally chopping trees), a colonist hauls one nearby item to storage before moving on - usually the crop they just picked.\n\nSettings: search radius (default 5 cells), include trees, only colonists with Hauling enabled, only the harvested crop.</description>
+	<description>After harvesting plants, chopping trees, milking or shearing animals, mining or fishing, a colonist hauls the closest haulable item nearby to storage before moving on.\n\nSettings: search radius (default 5 cells), enable for plants / trees / animals / mining / fishing, only colonists with Hauling enabled.</description>
 	<modDependencies>
 		<li>
 			<packageId>brrainz.harmony</packageId>

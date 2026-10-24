@@ -38,9 +38,15 @@ namespace TKS_HaulAfterHarvest
             listingStandard.Begin(inRect);
             listingStandard.Label("TKSHaulAfterHarvestRadius".Translate(settings.radius), tooltip: "TKSHaulAfterHarvestRadiusToolTip".Translate());
             settings.radius = (int)listingStandard.Slider(settings.radius, 1f, 20f);
+            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnablePlants".Translate(), ref settings.enablePlants, "TKSHaulAfterHarvestEnablePlantsToolTip".Translate());
             listingStandard.CheckboxLabeled("TKSHaulAfterHarvestIncludeTrees".Translate(), ref settings.includeTrees, "TKSHaulAfterHarvestIncludeTreesToolTip".Translate());
+            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableAnimals".Translate(), ref settings.enableAnimals, "TKSHaulAfterHarvestEnableAnimalsToolTip".Translate());
+            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableMining".Translate(), ref settings.enableMining, "TKSHaulAfterHarvestEnableMiningToolTip".Translate());
+            if (ModsConfig.OdysseyActive)
+            {
+                listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableFishing".Translate(), ref settings.enableFishing, "TKSHaulAfterHarvestEnableFishingToolTip".Translate());
+            }
             listingStandard.CheckboxLabeled("TKSHaulAfterHarvestRequireHauling".Translate(), ref settings.requireHauling, "TKSHaulAfterHarvestRequireHaulingToolTip".Translate());
-            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestCropOnly".Translate(), ref settings.cropOnly, "TKSHaulAfterHarvestCropOnlyToolTip".Translate());
             listingStandard.End();
             base.DoSettingsWindowContents(inRect);
         }
@@ -51,35 +57,115 @@ namespace TKS_HaulAfterHarvest
         //how far from the pawn (in cells) to look for something to haul
         public int radius = 5;
 
-        //also haul after cutting plants (chopping trees drops wood)
+        //haul after harvesting plants
+        public bool enablePlants = true;
+
+        //haul after cutting plants (chopping trees drops wood)
         public bool includeTrees = true;
+
+        //haul after milking or shearing animals
+        public bool enableAnimals = true;
+
+        //haul after mining
+        public bool enableMining = true;
+
+        //haul after fishing (Odyssey)
+        public bool enableFishing = true;
 
         //only pawns with the Hauling work type enabled
         public bool requireHauling = true;
 
-        //only haul what was just harvested, never other items nearby
-        public bool cropOnly = false;
-
         public override void ExposeData()
         {
             Scribe_Values.Look(ref radius, "radius", 5);
+            Scribe_Values.Look(ref enablePlants, "enablePlants", true);
             Scribe_Values.Look(ref includeTrees, "includeTrees", true);
+            Scribe_Values.Look(ref enableAnimals, "enableAnimals", true);
+            Scribe_Values.Look(ref enableMining, "enableMining", true);
+            Scribe_Values.Look(ref enableFishing, "enableFishing", true);
             Scribe_Values.Look(ref requireHauling, "requireHauling", true);
-            Scribe_Values.Look(ref cropOnly, "cropOnly", false);
             base.ExposeData();
+        }
+    }
+
+    public enum WorkGroup
+    {
+        None,
+        Plants,
+        Trees,
+        Animals,
+        Mining,
+        Fishing
+    }
+
+    //which kind of work each pawn just finished, waiting to see if their next job is more of the same
+    public static class PendingHauls
+    {
+        public static Dictionary<Pawn, WorkGroup> pending = new Dictionary<Pawn, WorkGroup>();
+
+        public static WorkGroup GroupOf(JobDef def)
+        {
+            if (def == JobDefOf.Harvest || def == JobDefOf.HarvestDesignated)
+            {
+                return WorkGroup.Plants;
+            }
+            if (def == JobDefOf.CutPlant || def == JobDefOf.CutPlantDesignated)
+            {
+                return WorkGroup.Trees;
+            }
+            if (def == JobDefOf.Milk || def == JobDefOf.Shear)
+            {
+                return WorkGroup.Animals;
+            }
+            if (def == JobDefOf.Mine)
+            {
+                return WorkGroup.Mining;
+            }
+            //null without Odyssey, so never matches then
+            if (def == JobDefOf.Fish)
+            {
+                return WorkGroup.Fishing;
+            }
+            return WorkGroup.None;
+        }
+
+        public static bool IsEnabled(WorkGroup group)
+        {
+            TKS_HaulAfterHarvestSettings settings = TKS_HaulAfterHarvest.settings;
+            switch (group)
+            {
+                case WorkGroup.Plants:
+                    return settings.enablePlants;
+                case WorkGroup.Trees:
+                    return settings.includeTrees;
+                case WorkGroup.Animals:
+                    return settings.enableAnimals;
+                case WorkGroup.Mining:
+                    return settings.enableMining;
+                case WorkGroup.Fishing:
+                    return settings.enableFishing;
+                default:
+                    return false;
+            }
         }
     }
 
     [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.EndCurrentJob))]
     public static class Pawn_JobTracker_EndCurrentJob_Patch
     {
-        //a prefix, so the haul is queued before the tracker picks the pawn's next job
+        //note the finished work; the haul is decided in StartJob, once we know what the pawn does next
         [HarmonyPrefix]
         public static void Prefix(Pawn_JobTracker __instance, Pawn ___pawn, JobCondition condition, bool startNewJob)
         {
-            //cheapest checks first: most jobs that end aren't harvests
+            //cheapest checks first: most jobs that end aren't ones we handle
             Job job = __instance.curJob;
-            if (job == null || !startNewJob || condition != JobCondition.Succeeded || !IsHarvestJob(job.def))
+            if (job == null || !startNewJob || condition != JobCondition.Succeeded)
+            {
+                return;
+            }
+
+            WorkGroup group = PendingHauls.GroupOf(job.def);
+            if (group == WorkGroup.None || !PendingHauls.IsEnabled(group))
             {
                 return;
             }
@@ -95,79 +181,100 @@ namespace TKS_HaulAfterHarvest
                 return;
             }
 
-            //the last plant in the batch - may already be gone, but its def is all we need
-            ThingDef crop = job.targetA.Thing?.def.plant?.harvestedThingDef;
-            if (settings.cropOnly && crop == null)
+            PendingHauls.pending[___pawn] = group;
+        }
+    }
+
+    [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.StartJob))]
+    public static class Pawn_JobTracker_StartJob_Patch
+    {
+        //if the pawn's next job isn't more of the same work, haul something nearby first instead
+        [HarmonyPrefix]
+        public static void Prefix(Pawn ___pawn, ref Job newJob, ref JobTag? tag, bool fromQueue)
+        {
+            if (PendingHauls.pending.Count == 0 || newJob == null || !PendingHauls.pending.TryGetValue(___pawn, out WorkGroup group))
             {
                 return;
             }
 
-            Job haul = FindHaulJob(___pawn, crop, settings);
+            //vanilla's one-tick pause after a finished job - the real next job comes after it
+            if (newJob.def == JobDefOf.Wait_MaintainPosture)
+            {
+                return;
+            }
+
+            PendingHauls.pending.Remove(___pawn);
+
+            //more of the same work: keep going, the haul waits for the end of the run
+            if (PendingHauls.GroupOf(newJob.def) == group)
+            {
+                return;
+            }
+
+            //cutting trees then moving on to sowing or harvesting is still plant work - no haul in between
+            if (group == WorkGroup.Trees && (newJob.def == JobDefOf.Sow || PendingHauls.GroupOf(newJob.def) == WorkGroup.Plants))
+            {
+                return;
+            }
+
+            if (fromQueue || !CanHaulBefore(___pawn, newJob))
+            {
+                return;
+            }
+
+            Job haul = FindHaulJob(___pawn, TKS_HaulAfterHarvest.settings);
             if (haul != null)
             {
-                __instance.jobQueue.EnqueueFirst(haul, JobTag.MiscWork);
+                //the replaced job is dropped; the pawn picks it (or something better) again after the haul
+                newJob = haul;
+                tag = JobTag.MiscWork;
             }
         }
 
-        private static bool IsHarvestJob(JobDef def)
+        //only step in front of other work, eating, sleeping or recreation - never fleeing, firefighting,
+        //combat, mental states or orders
+        private static bool CanHaulBefore(Pawn pawn, Job newJob)
         {
-            if (def == JobDefOf.Harvest || def == JobDefOf.HarvestDesignated)
+            if (!pawn.Spawned || pawn.Drafted || pawn.InMentalState || newJob.playerForced)
             {
-                return true;
+                return false;
             }
-            return TKS_HaulAfterHarvest.settings.includeTrees && (def == JobDefOf.CutPlant || def == JobDefOf.CutPlantDesignated);
+            return newJob.workGiverDef != null || newJob.def == JobDefOf.Ingest || newJob.def == JobDefOf.LayDown || newJob.def.joyKind != null;
         }
 
-        //closest haulable in range, preferring what was just harvested; one search through the map's haulables list
-        private static Job FindHaulJob(Pawn pawn, ThingDef crop, TKS_HaulAfterHarvestSettings settings)
+        //closest haulable in range; one search through the map's haulables list
+        private static Job FindHaulJob(Pawn pawn, TKS_HaulAfterHarvestSettings settings)
         {
             ICollection<Thing> haulables = pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling();
             int maxDistSquared = settings.radius * settings.radius;
 
-            Thing bestCrop = null;
-            int bestCropDist = int.MaxValue;
-            Thing bestOther = null;
-            int bestOtherDist = int.MaxValue;
+            Job best = null;
+            int bestDist = int.MaxValue;
 
             foreach (Thing thing in haulables)
             {
-                bool isCrop = thing.def == crop;
-                if (settings.cropOnly && !isCrop)
-                {
-                    continue;
-                }
-
                 int dist = (thing.Position - pawn.Position).LengthHorizontalSquared;
-                if (dist > maxDistSquared || dist >= (isCrop ? bestCropDist : bestOtherDist))
+                if (dist > maxDistSquared || dist >= bestDist)
                 {
                     continue;
                 }
 
-                //reach and reservation checks only for things that would beat the current best
+                //reach, reservation and storage checks only for things that would beat the current best
                 if (thing.IsForbidden(pawn) || !HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false))
                 {
                     continue;
                 }
 
-                if (isCrop)
+                //null when there's no better storage for it
+                Job haul = HaulAIUtility.HaulToStorageJob(pawn, thing, false);
+                if (haul != null)
                 {
-                    bestCrop = thing;
-                    bestCropDist = dist;
-                }
-                else
-                {
-                    bestOther = thing;
-                    bestOtherDist = dist;
+                    best = haul;
+                    bestDist = dist;
                 }
             }
 
-            //HaulToStorageJob returns null when there's no better storage for it
-            Job haul = bestCrop != null ? HaulAIUtility.HaulToStorageJob(pawn, bestCrop, false) : null;
-            if (haul == null && bestOther != null)
-            {
-                haul = HaulAIUtility.HaulToStorageJob(pawn, bestOther, false);
-            }
-            return haul;
+            return best;
         }
     }
 }
