@@ -210,6 +210,66 @@ namespace TKS_HaulAfterHarvest
         }
     }
 
+    //growing zones with hauling after harvest turned off, by zone ID; zones not listed are on
+    public class MapComponent_HaulZones : MapComponent
+    {
+        public HashSet<int> disabledZones = new HashSet<int>();
+
+        public MapComponent_HaulZones(Map map) : base(map)
+        {
+        }
+
+        public static bool IsDisabled(Map map, IntVec3 cell)
+        {
+            if (!cell.InBounds(map) || !(map.zoneManager.ZoneAt(cell) is Zone_Growing zone))
+            {
+                return false;
+            }
+            return map.GetComponent<MapComponent_HaulZones>().disabledZones.Contains(zone.ID);
+        }
+
+        public override void ExposeData()
+        {
+            Scribe_Collections.Look(ref disabledZones, "disabledZones", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && disabledZones == null)
+            {
+                disabledZones = new HashSet<int>();
+            }
+        }
+    }
+
+    [StaticConstructorOnStartup]
+    [HarmonyPatch(typeof(Zone_Growing), nameof(Zone_Growing.GetGizmos))]
+    public static class Zone_Growing_GetGizmos_Patch
+    {
+        private static readonly Texture2D HaulIcon = ContentFinder<Texture2D>.Get("UI/Designators/Haul");
+
+        //"Haul after harvest" toggle after vanilla's sow/cut toggles; on unless turned off for this zone
+        [HarmonyPostfix]
+        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> __result, Zone_Growing __instance)
+        {
+            foreach (Gizmo gizmo in __result)
+            {
+                yield return gizmo;
+            }
+            HashSet<int> disabled = __instance.Map.GetComponent<MapComponent_HaulZones>().disabledZones;
+            yield return new Command_Toggle
+            {
+                defaultLabel = "TKSHaulAfterHarvestZone".Translate(),
+                defaultDesc = "TKSHaulAfterHarvestZoneDesc".Translate(),
+                icon = HaulIcon,
+                isActive = () => !disabled.Contains(__instance.ID),
+                toggleAction = delegate
+                {
+                    if (!disabled.Remove(__instance.ID))
+                    {
+                        disabled.Add(__instance.ID);
+                    }
+                }
+            };
+        }
+    }
+
     [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.EndCurrentJob))]
     public static class Pawn_JobTracker_EndCurrentJob_Patch
     {
@@ -231,6 +291,14 @@ namespace TKS_HaulAfterHarvest
             }
 
             if (!___pawn.Spawned || !___pawn.IsFreeColonist || ___pawn.Drafted || __instance.jobQueue.Count > 0)
+            {
+                return;
+            }
+
+            //growing zone with the toggle off: no haul. The last plant's cell decides (it keeps its position once
+            //harvested), since the pawn often stands just outside the zone
+            if ((group == WorkGroup.Plants || group == WorkGroup.Trees)
+                && MapComponent_HaulZones.IsDisabled(___pawn.Map, job.targetA.IsValid ? job.targetA.Cell : ___pawn.Position))
             {
                 return;
             }

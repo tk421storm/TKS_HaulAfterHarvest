@@ -22,4 +22,6 @@
 	<TKSHaulAfterHarvestEnableFishingToolTip>Haul something nearby after a run of fishing.</TKSHaulAfterHarvestEnableFishingToolTip>
 	<TKSHaulAfterHarvestRequireHauling>Only colonists assigned to hauling</TKSHaulAfterHarvestRequireHauling>
 	<TKSHaulAfterHarvestRequireHaulingToolTip>Colonists with the Hauling work type turned off go straight back to their other work.</TKSHaulAfterHarvestRequireHaulingToolTip>
+	<TKSHaulAfterHarvestZone>Haul after harvest</TKSHaulAfterHarvestZone>
+	<TKSHaulAfterHarvestZoneDesc>When a colonist finishes harvesting or cutting in this zone, they haul something nearby to storage before moving on. Turn off to have them move straight on.</TKSHaulAfterHarvestZoneDesc>
 </LanguageData>
