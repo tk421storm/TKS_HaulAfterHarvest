@@ -6,7 +6,7 @@
 	<supportedVersions>
 		<li>1.6</li>
 	</supportedVersions>
-	<description>After harvesting plants, chopping trees, milking or shearing animals, mining or fishing, a colonist hauls the closest haulable item nearby to storage before moving on.\n\nSettings: search radius (default 5 cells), enable for plants / trees / animals / mining / fishing, only colonists with Hauling enabled.</description>
+	<description>After harvesting plants, chopping trees, milking or shearing animals, mining, deconstructing, stripping, extracting skulls or fishing, a colonist hauls the closest haulable item nearby to storage before moving on.\n\nSettings: search radius (default 5 cells), haul before more of the same work further than 20 cells away, enable for plants / trees / animals / mining / deconstruction / stripping / skull extraction / fishing, only colonists with Hauling enabled.</description>
 	<modDependencies>
 		<li>
 			<packageId>brrainz.harmony</packageId>

@@ -14,6 +14,21 @@ namespace TKS_HaulAfterHarvest
         {
             Harmony harmony = new Harmony("TKS_HaulAfterHarvest");
             harmony.PatchAll();
+
+            //Dubs Bad Hygiene: toilet, washing and drinking needs get a haul first, like eating
+            if (ModsConfig.IsActive("Dubwise.DubsBadHygiene"))
+            {
+                string[] needJobNames = { "UseToilet", "haveWildPoo", "takeShower", "useWashBucket", "washAtCell", "DBHDrinkFromBasin", "DBHDrinkFromGround" };
+                foreach (string name in needJobNames)
+                {
+                    JobDef def = DefDatabase<JobDef>.GetNamedSilentFail(name);
+                    if (def != null)
+                    {
+                        PendingHauls.needJobs.Add(def);
+                    }
+                }
+            }
+
             Log.Message("TKS_HaulAfterHarvest: Patching finished");
         }
     }
@@ -38,10 +53,15 @@ namespace TKS_HaulAfterHarvest
             listingStandard.Begin(inRect);
             listingStandard.Label("TKSHaulAfterHarvestRadius".Translate(settings.radius), tooltip: "TKSHaulAfterHarvestRadiusToolTip".Translate());
             settings.radius = (int)listingStandard.Slider(settings.radius, 1f, 20f);
+            listingStandard.Label("TKSHaulAfterHarvestSameWorkDistance".Translate(settings.sameWorkDistance), tooltip: "TKSHaulAfterHarvestSameWorkDistanceToolTip".Translate());
+            settings.sameWorkDistance = (int)listingStandard.Slider(settings.sameWorkDistance, 5f, 100f);
             listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnablePlants".Translate(), ref settings.enablePlants, "TKSHaulAfterHarvestEnablePlantsToolTip".Translate());
             listingStandard.CheckboxLabeled("TKSHaulAfterHarvestIncludeTrees".Translate(), ref settings.includeTrees, "TKSHaulAfterHarvestIncludeTreesToolTip".Translate());
             listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableAnimals".Translate(), ref settings.enableAnimals, "TKSHaulAfterHarvestEnableAnimalsToolTip".Translate());
             listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableMining".Translate(), ref settings.enableMining, "TKSHaulAfterHarvestEnableMiningToolTip".Translate());
+            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableDeconstruct".Translate(), ref settings.enableDeconstruct, "TKSHaulAfterHarvestEnableDeconstructToolTip".Translate());
+            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableStrip".Translate(), ref settings.enableStrip, "TKSHaulAfterHarvestEnableStripToolTip".Translate());
+            listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableSkulls".Translate(), ref settings.enableSkulls, "TKSHaulAfterHarvestEnableSkullsToolTip".Translate());
             if (ModsConfig.OdysseyActive)
             {
                 listingStandard.CheckboxLabeled("TKSHaulAfterHarvestEnableFishing".Translate(), ref settings.enableFishing, "TKSHaulAfterHarvestEnableFishingToolTip".Translate());
@@ -57,6 +77,9 @@ namespace TKS_HaulAfterHarvest
         //how far from the pawn (in cells) to look for something to haul
         public int radius = 5;
 
+        //more of the same work further away than this (in cells) still gets a haul first
+        public int sameWorkDistance = 20;
+
         //haul after harvesting plants
         public bool enablePlants = true;
 
@@ -69,6 +92,15 @@ namespace TKS_HaulAfterHarvest
         //haul after mining
         public bool enableMining = true;
 
+        //haul after deconstructing
+        public bool enableDeconstruct = true;
+
+        //haul after stripping
+        public bool enableStrip = true;
+
+        //haul after extracting skulls
+        public bool enableSkulls = true;
+
         //haul after fishing (Odyssey)
         public bool enableFishing = true;
 
@@ -78,10 +110,14 @@ namespace TKS_HaulAfterHarvest
         public override void ExposeData()
         {
             Scribe_Values.Look(ref radius, "radius", 5);
+            Scribe_Values.Look(ref sameWorkDistance, "sameWorkDistance", 20);
             Scribe_Values.Look(ref enablePlants, "enablePlants", true);
             Scribe_Values.Look(ref includeTrees, "includeTrees", true);
             Scribe_Values.Look(ref enableAnimals, "enableAnimals", true);
             Scribe_Values.Look(ref enableMining, "enableMining", true);
+            Scribe_Values.Look(ref enableDeconstruct, "enableDeconstruct", true);
+            Scribe_Values.Look(ref enableStrip, "enableStrip", true);
+            Scribe_Values.Look(ref enableSkulls, "enableSkulls", true);
             Scribe_Values.Look(ref enableFishing, "enableFishing", true);
             Scribe_Values.Look(ref requireHauling, "requireHauling", true);
             base.ExposeData();
@@ -95,6 +131,9 @@ namespace TKS_HaulAfterHarvest
         Trees,
         Animals,
         Mining,
+        Deconstruct,
+        Strip,
+        Skulls,
         Fishing
     }
 
@@ -102,6 +141,9 @@ namespace TKS_HaulAfterHarvest
     public static class PendingHauls
     {
         public static Dictionary<Pawn, WorkGroup> pending = new Dictionary<Pawn, WorkGroup>();
+
+        //other mods' need jobs treated like eating (filled at startup, empty without those mods)
+        public static HashSet<JobDef> needJobs = new HashSet<JobDef>();
 
         public static WorkGroup GroupOf(JobDef def)
         {
@@ -120,6 +162,18 @@ namespace TKS_HaulAfterHarvest
             if (def == JobDefOf.Mine)
             {
                 return WorkGroup.Mining;
+            }
+            if (def == JobDefOf.Deconstruct)
+            {
+                return WorkGroup.Deconstruct;
+            }
+            if (def == JobDefOf.Strip)
+            {
+                return WorkGroup.Strip;
+            }
+            if (def == JobDefOf.ExtractSkull)
+            {
+                return WorkGroup.Skulls;
             }
             //null without Odyssey, so never matches then
             if (def == JobDefOf.Fish)
@@ -142,6 +196,12 @@ namespace TKS_HaulAfterHarvest
                     return settings.enableAnimals;
                 case WorkGroup.Mining:
                     return settings.enableMining;
+                case WorkGroup.Deconstruct:
+                    return settings.enableDeconstruct;
+                case WorkGroup.Strip:
+                    return settings.enableStrip;
+                case WorkGroup.Skulls:
+                    return settings.enableSkulls;
                 case WorkGroup.Fishing:
                     return settings.enableFishing;
                 default:
@@ -205,8 +265,9 @@ namespace TKS_HaulAfterHarvest
 
             PendingHauls.pending.Remove(___pawn);
 
-            //more of the same work: keep going, the haul waits for the end of the run
-            if (PendingHauls.GroupOf(newJob.def) == group)
+            //more of the same work close by: keep going, the haul waits for the end of the run.
+            //further away counts as the end of the run, so haul here before walking off
+            if (SameRun(group, PendingHauls.GroupOf(newJob.def)) && IsNearby(___pawn, newJob))
             {
                 return;
             }
@@ -222,7 +283,7 @@ namespace TKS_HaulAfterHarvest
                 return;
             }
 
-            Job haul = FindHaulJob(___pawn, TKS_HaulAfterHarvest.settings);
+            Job haul = FindHaulJob(___pawn, group, TKS_HaulAfterHarvest.settings);
             if (haul != null)
             {
                 //the replaced job is dropped; the pawn picks it (or something better) again after the haul
@@ -231,50 +292,93 @@ namespace TKS_HaulAfterHarvest
             }
         }
 
-        //only step in front of other work, eating, sleeping or recreation - never fleeing, firefighting,
-        //combat, mental states or orders
+        //stripping and skull extraction are one run either way round, so no haul between the two on the same bodies
+        private static bool SameRun(WorkGroup group, WorkGroup next)
+        {
+            if (group == next)
+            {
+                return true;
+            }
+            return (group == WorkGroup.Strip || group == WorkGroup.Skulls) && (next == WorkGroup.Strip || next == WorkGroup.Skulls);
+        }
+
+        //next job's target within sameWorkDistance of the pawn; a job without a target counts as nearby
+        private static bool IsNearby(Pawn pawn, Job newJob)
+        {
+            //vanilla harvest jobs have no targetA yet, only a queue of plants (closest first when sorted)
+            LocalTargetInfo target = newJob.targetA;
+            if (!target.IsValid && !newJob.targetQueueA.NullOrEmpty())
+            {
+                target = newJob.targetQueueA[0];
+            }
+            if (!target.IsValid)
+            {
+                return true;
+            }
+            int maxDist = TKS_HaulAfterHarvest.settings.sameWorkDistance;
+            return (target.Cell - pawn.Position).LengthHorizontalSquared <= maxDist * maxDist;
+        }
+
+        //only step in front of other work, eating, sleeping, recreation or modded needs - never fleeing,
+        //firefighting, combat, mental states or orders
         private static bool CanHaulBefore(Pawn pawn, Job newJob)
         {
             if (!pawn.Spawned || pawn.Drafted || pawn.InMentalState || newJob.playerForced)
             {
                 return false;
             }
-            return newJob.workGiverDef != null || newJob.def == JobDefOf.Ingest || newJob.def == JobDefOf.LayDown || newJob.def.joyKind != null;
+            return newJob.workGiverDef != null || newJob.def == JobDefOf.Ingest || newJob.def == JobDefOf.LayDown || newJob.def.joyKind != null
+                || PendingHauls.needJobs.Contains(newJob.def);
         }
 
         //closest haulable in range; one search through the map's haulables list
-        private static Job FindHaulJob(Pawn pawn, TKS_HaulAfterHarvestSettings settings)
+        private static Job FindHaulJob(Pawn pawn, WorkGroup group, TKS_HaulAfterHarvestSettings settings)
         {
-            ICollection<Thing> haulables = pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling();
             int maxDistSquared = settings.radius * settings.radius;
 
             Job best = null;
             int bestDist = int.MaxValue;
 
-            foreach (Thing thing in haulables)
+            foreach (Thing thing in pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling())
             {
-                int dist = (thing.Position - pawn.Position).LengthHorizontalSquared;
-                if (dist > maxDistSquared || dist >= bestDist)
-                {
-                    continue;
-                }
+                ConsiderHaul(pawn, thing, maxDistSquared, ref best, ref bestDist);
+            }
 
-                //reach, reservation and storage checks only for things that would beat the current best
-                if (thing.IsForbidden(pawn) || !HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false))
+            //chunks are only in the haulables list once marked for hauling; after mining, take one along
+            //unmarked if a stockpile accepts it (the haul itself doesn't need the mark)
+            if (group == WorkGroup.Mining)
+            {
+                foreach (Thing chunk in pawn.Map.listerThings.ThingsInGroup(ThingRequestGroup.Chunk))
                 {
-                    continue;
-                }
-
-                //null when there's no better storage for it
-                Job haul = HaulAIUtility.HaulToStorageJob(pawn, thing, false);
-                if (haul != null)
-                {
-                    best = haul;
-                    bestDist = dist;
+                    ConsiderHaul(pawn, chunk, maxDistSquared, ref best, ref bestDist);
                 }
             }
 
             return best;
+        }
+
+        //replaces best with a haul of thing if it's closer and can go to storage
+        private static void ConsiderHaul(Pawn pawn, Thing thing, int maxDistSquared, ref Job best, ref int bestDist)
+        {
+            int dist = (thing.Position - pawn.Position).LengthHorizontalSquared;
+            if (dist > maxDistSquared || dist >= bestDist)
+            {
+                return;
+            }
+
+            //reach, reservation and storage checks only for things that would beat the current best
+            if (thing.IsForbidden(pawn) || !HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false))
+            {
+                return;
+            }
+
+            //null when there's no better storage for it
+            Job haul = HaulAIUtility.HaulToStorageJob(pawn, thing, false);
+            if (haul != null)
+            {
+                best = haul;
+                bestDist = dist;
+            }
         }
     }
 }

@@ -2,6 +2,8 @@
 <LanguageData>
 	<TKSHaulAfterHarvestRadius>Search radius: {0} cells</TKSHaulAfterHarvestRadius>
 	<TKSHaulAfterHarvestRadiusToolTip>How far from the colonist to look for something to haul when a harvest finishes.</TKSHaulAfterHarvestRadiusToolTip>
+	<TKSHaulAfterHarvestSameWorkDistance>Haul before more of the same work beyond: {0} cells</TKSHaulAfterHarvestSameWorkDistance>
+	<TKSHaulAfterHarvestSameWorkDistanceToolTip>When the colonist's next job is more of the same work, but further away than this, they haul something nearby before walking over.</TKSHaulAfterHarvestSameWorkDistanceToolTip>
 	<TKSHaulAfterHarvestEnablePlants>Enable for plants</TKSHaulAfterHarvestEnablePlants>
 	<TKSHaulAfterHarvestEnablePlantsToolTip>Haul something nearby after harvesting crops and other plants.</TKSHaulAfterHarvestEnablePlantsToolTip>
 	<TKSHaulAfterHarvestIncludeTrees>Enable for trees</TKSHaulAfterHarvestIncludeTrees>
@@ -9,7 +11,13 @@
 	<TKSHaulAfterHarvestEnableAnimals>Enable for animals</TKSHaulAfterHarvestEnableAnimals>
 	<TKSHaulAfterHarvestEnableAnimalsToolTip>Haul something nearby after milking or shearing an animal.</TKSHaulAfterHarvestEnableAnimalsToolTip>
 	<TKSHaulAfterHarvestEnableMining>Enable for mining</TKSHaulAfterHarvestEnableMining>
-	<TKSHaulAfterHarvestEnableMiningToolTip>Haul something nearby after mining. Rock chunks are only hauled if they are marked for hauling, as in vanilla.</TKSHaulAfterHarvestEnableMiningToolTip>
+	<TKSHaulAfterHarvestEnableMiningToolTip>Haul something nearby after mining. Rock chunks nearby are hauled too, unmarked, when a stockpile accepts them.</TKSHaulAfterHarvestEnableMiningToolTip>
+	<TKSHaulAfterHarvestEnableDeconstruct>Enable for deconstruction</TKSHaulAfterHarvestEnableDeconstruct>
+	<TKSHaulAfterHarvestEnableDeconstructToolTip>Haul something nearby after a run of deconstructing buildings.</TKSHaulAfterHarvestEnableDeconstructToolTip>
+	<TKSHaulAfterHarvestEnableStrip>Enable for stripping</TKSHaulAfterHarvestEnableStrip>
+	<TKSHaulAfterHarvestEnableStripToolTip>Haul something nearby after a run of stripping corpses or downed pawns.</TKSHaulAfterHarvestEnableStripToolTip>
+	<TKSHaulAfterHarvestEnableSkulls>Enable for skull extraction</TKSHaulAfterHarvestEnableSkulls>
+	<TKSHaulAfterHarvestEnableSkullsToolTip>Haul something nearby after a run of extracting skulls.</TKSHaulAfterHarvestEnableSkullsToolTip>
 	<TKSHaulAfterHarvestEnableFishing>Enable for fishing</TKSHaulAfterHarvestEnableFishing>
 	<TKSHaulAfterHarvestEnableFishingToolTip>Haul something nearby after a run of fishing.</TKSHaulAfterHarvestEnableFishingToolTip>
 	<TKSHaulAfterHarvestRequireHauling>Only colonists assigned to hauling</TKSHaulAfterHarvestRequireHauling>
