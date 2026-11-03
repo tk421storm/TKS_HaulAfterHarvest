@@ -1,0 +1,19 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaulAfterHarvest.1.7", "HaulAfterHarvest.1.7.csproj", "{9B98B111-B8CF-441A-8722-85B243093A5E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		1.7|Any CPU = 1.7|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B98B111-B8CF-441A-8722-85B243093A5E}.1.7|Any CPU.ActiveCfg = 1.7|Any CPU
+		{9B98B111-B8CF-441A-8722-85B243093A5E}.1.7|Any CPU.Build.0 = 1.7|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

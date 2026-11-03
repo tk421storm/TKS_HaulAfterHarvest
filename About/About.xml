@@ -5,8 +5,9 @@
 	<packageId>tk421storm.HaulAfterHarvest</packageId>
 	<supportedVersions>
 		<li>1.6</li>
+		<li>1.7</li>
 	</supportedVersions>
-	<description>After harvesting plants, chopping trees, milking or shearing animals, mining, deconstructing, stripping, extracting skulls or fishing, a colonist hauls the closest haulable item nearby to storage before moving on.\n\nSettings: search radius (default 5 cells), haul before more of the same work further than 20 cells away, enable for plants / trees / animals / mining / deconstruction / stripping / skull extraction / fishing, only colonists with Hauling enabled. Each growing zone has a toggle to turn it off.</description>
+	<description>After harvesting plants, chopping trees, milking or shearing animals, mining, deconstructing, stripping, extracting skulls or fishing, a colonist hauls the closest haulable item nearby to storage before moving on.\n\nSettings: search radius (default 5 cells), haul before more of the same work further than 20 cells away, enable for plants / trees / animals / mining / deconstruction / stripping / skull extraction / fishing, only colonists with Hauling enabled. Each growing zone has a toggle to turn it off.\n\nWith Pick Up And Haul active, the haul uses its inventory hauling; otherwise it's a vanilla haul.</description>
 	<modDependencies>
 		<li>
 			<packageId>brrainz.harmony</packageId>

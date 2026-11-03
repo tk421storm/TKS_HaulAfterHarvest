@@ -29,6 +29,9 @@ namespace TKS_HaulAfterHarvest
                 }
             }
 
+            //Pick Up And Haul: found by def name, so no reference to its DLL; stays null without the mod
+            PendingHauls.haulToInventory = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker as WorkGiver_Scanner;
+
             Log.Message("TKS_HaulAfterHarvest: Patching finished");
         }
     }
@@ -144,6 +147,9 @@ namespace TKS_HaulAfterHarvest
 
         //other mods' need jobs treated like eating (filled at startup, empty without those mods)
         public static HashSet<JobDef> needJobs = new HashSet<JobDef>();
+
+        //Pick Up And Haul's work giver (filled at startup, null without that mod)
+        public static WorkGiver_Scanner haulToInventory;
 
         public static WorkGroup GroupOf(JobDef def)
         {
@@ -420,6 +426,13 @@ namespace TKS_HaulAfterHarvest
                 {
                     ConsiderHaul(pawn, chunk, maxDistSquared, ref best, ref bestDist);
                 }
+            }
+
+            //Pick Up And Haul decides how to haul the closest thing, gathering more into the pawn's inventory or
+            //falling back to a vanilla haul itself. Asked only for the winner because it sorts all haulables each call
+            if (best != null && PendingHauls.haulToInventory != null)
+            {
+                return PendingHauls.haulToInventory.JobOnThing(pawn, best.targetA.Thing, false) ?? best;
             }
 
             return best;
